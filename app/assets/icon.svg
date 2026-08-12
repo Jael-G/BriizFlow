@@ -1,0 +1,126 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<defs>
+
+  <!-- Background -->
+  <linearGradient id="bg-gradient" x1="20%" y1="0%" x2="80%" y2="100%">
+    <stop offset="0%" stop-color="#4d62f0"/>
+    <stop offset="40%" stop-color="#374cdb"/>
+    <stop offset="100%" stop-color="#2433b5"/>
+  </linearGradient>
+
+  <!-- Bars -->
+  <linearGradient id="bar-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#dce3ef"/>
+    <stop offset="30%" stop-color="#ffffff"/>
+    <stop offset="85%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#cbd4e5"/>
+  </linearGradient>
+
+  <linearGradient id="bar-specular" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity=".85"/>
+    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+
+  <linearGradient id="rim-light" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity=".35"/>
+    <stop offset="15%" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+
+  <filter id="bar-shadow" x="-30%" y="-20%" width="160%" height="150%">
+    <feDropShadow
+      dx="-5"
+      dy="10"
+      stdDeviation="6"
+      flood-color="#111855"
+      flood-opacity=".45"/>
+  </filter>
+
+  <filter id="soft-glow">
+    <feGaussianBlur stdDeviation="4"/>
+  </filter>
+
+</defs>
+
+<!-- Card -->
+<rect
+  x="32"
+  y="32"
+  width="448"
+  height="448"
+  rx="80"
+  fill="url(#bg-gradient)"/>
+
+<!-- Rim -->
+<rect
+  x="32"
+  y="32"
+  width="448"
+  height="448"
+  rx="80"
+  fill="url(#rim-light)"/>
+
+<!-- Glow (mirrored/symmetric heights, all centered on y=256) -->
+<g opacity=".35" filter="url(#soft-glow)" fill="#ffffff">
+
+  <rect x="81"  y="247" width="14" height="18"  rx="7"/>
+  <rect x="105" y="238" width="14" height="36"  rx="7"/>
+  <rect x="129" y="224" width="14" height="64"  rx="7"/>
+  <rect x="153" y="207" width="14" height="98"  rx="7"/>
+  <rect x="177" y="182" width="14" height="148" rx="7"/>
+  <rect x="201" y="158" width="14" height="196" rx="7"/>
+  <rect x="225" y="140" width="14" height="232" rx="7"/>
+  <rect x="249" y="128" width="14" height="256" rx="7"/>
+  <rect x="273" y="140" width="14" height="232" rx="7"/>
+  <rect x="297" y="158" width="14" height="196" rx="7"/>
+  <rect x="321" y="182" width="14" height="148" rx="7"/>
+  <rect x="345" y="207" width="14" height="98"  rx="7"/>
+  <rect x="369" y="224" width="14" height="64"  rx="7"/>
+  <rect x="393" y="238" width="14" height="36"  rx="7"/>
+  <rect x="417" y="247" width="14" height="18"  rx="7"/>
+
+</g>
+
+<!-- Wave (mirrored/symmetric heights, all centered on y=256) -->
+<g filter="url(#bar-shadow)" fill="url(#bar-gradient)">
+
+  <rect x="81"  y="247" width="14" height="18"  rx="7"/>
+  <rect x="105" y="238" width="14" height="36"  rx="7"/>
+  <rect x="129" y="224" width="14" height="64"  rx="7"/>
+  <rect x="153" y="207" width="14" height="98"  rx="7"/>
+  <rect x="177" y="182" width="14" height="148" rx="7"/>
+  <rect x="201" y="158" width="14" height="196" rx="7"/>
+  <rect x="225" y="140" width="14" height="232" rx="7"/>
+  <rect x="249" y="128" width="14" height="256" rx="7"/>
+  <rect x="273" y="140" width="14" height="232" rx="7"/>
+  <rect x="297" y="158" width="14" height="196" rx="7"/>
+  <rect x="321" y="182" width="14" height="148" rx="7"/>
+  <rect x="345" y="207" width="14" height="98"  rx="7"/>
+  <rect x="369" y="224" width="14" height="64"  rx="7"/>
+  <rect x="393" y="238" width="14" height="36"  rx="7"/>
+  <rect x="417" y="247" width="14" height="18"  rx="7"/>
+
+</g>
+
+<!-- Specular -->
+<g opacity=".45" fill="url(#bar-specular)">
+
+  <rect x="81"  y="247" width="14" height="7"  rx="7"/>
+  <rect x="105" y="238" width="14" height="10" rx="7"/>
+  <rect x="129" y="224" width="14" height="12" rx="7"/>
+  <rect x="153" y="207" width="14" height="14" rx="7"/>
+  <rect x="177" y="182" width="14" height="16" rx="7"/>
+  <rect x="201" y="158" width="14" height="18" rx="7"/>
+  <rect x="225" y="140" width="14" height="20" rx="7"/>
+  <rect x="249" y="128" width="14" height="22" rx="7"/>
+  <rect x="273" y="140" width="14" height="20" rx="7"/>
+  <rect x="297" y="158" width="14" height="18" rx="7"/>
+  <rect x="321" y="182" width="14" height="16" rx="7"/>
+  <rect x="345" y="207" width="14" height="14" rx="7"/>
+  <rect x="369" y="224" width="14" height="12" rx="7"/>
+  <rect x="393" y="238" width="14" height="10" rx="7"/>
+  <rect x="417" y="247" width="14" height="7"  rx="7"/>
+
+</g>
+
+</svg>

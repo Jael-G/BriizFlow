@@ -1,0 +1,68 @@
+# Python bytecode and interpreter caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local Python environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Python build, packaging, and distribution outputs
+*.egg-info/
+.eggs/
+*.egg
+*.whl
+*.spec
+pip-wheel-metadata/
+build/
+dist/
+*.AppImage
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type-checker and linter caches (used if tooling is added later)
+.mypy_cache/
+.ruff_cache/
+*.log
+
+# Local environment files and credentials
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+credentials.json
+secrets.json
+
+# Editor and operating-system metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Downloaded native runtime and local developer tooling
+bin/whisper.cpp/
+.claude/

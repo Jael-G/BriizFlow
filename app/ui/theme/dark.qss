@@ -1,0 +1,244 @@
+/* BriizFlow dark theme.
+   $TOKENS are interpolated from colors.py + dimensions.py at build time. */
+* {
+    font-family: $FONT_STACK;
+    outline: none;
+}
+
+QMainWindow, QWidget#appRoot {
+    background: $BG;
+    color: $TEXT;
+    font-size: ${FONT_BODY}px;
+}
+
+/* ---- Text hierarchy (components/labels.py) ---- */
+QLabel#title {
+    font-size: ${FONT_TITLE}px;
+    font-weight: 600;
+    color: $TEXT;
+}
+QLabel#subtitle {
+    font-size: ${FONT_SUBTITLE}px;
+    font-weight: 500;
+    color: $TEXT;
+}
+QLabel#pageSubtitle {
+    font-size: ${FONT_PAGE_SUBTITLE}px;
+    color: $TEXT_MUTED;
+}
+QLabel#body {
+    font-size: ${FONT_BODY}px;
+    color: $TEXT;
+}
+QLabel#bodyStrong {
+    font-size: ${FONT_BODY}px;
+    font-weight: 600;
+    color: $TEXT;
+}
+QLabel#caption {
+    font-size: ${FONT_CAPTION}px;
+    color: $TEXT_MUTED;
+}
+QLabel#groupHeader {
+    font-size: 16px;
+    font-weight: 500;
+    color: #7C8698;
+    margin-top: 12px;
+    margin-bottom: 2px;
+}
+QLabel#badge {
+    color: $SUCCESS;
+    font-size: ${FONT_BODY}px;
+    font-weight: 600;
+}
+
+/* ---- Panels and rows (components/card.py, setting_row.py) ---- */
+QFrame#panel, QFrame#settingRow {
+    background: $SURFACE;
+    border: 1px solid $BORDER;
+    border-radius: ${RADIUS}px;
+}
+QFrame#modelCard {
+    background: $SURFACE;
+    border: 1px solid $BORDER;
+    border-radius: ${RADIUS}px;
+}
+QFrame#settingGroup {
+    background: transparent;
+    border: none;
+}
+
+/* ---- Buttons (components/button.py) ---- */
+QPushButton {
+    background: $SURFACE_2;
+    color: $TEXT;
+    border: 1px solid $BORDER;
+    border-radius: ${RADIUS_S}px;
+    padding: 0 ${SPACE_L}px;
+    min-height: ${BTN_HEIGHT}px;
+    font-size: ${FONT_BODY}px;
+}
+QPushButton:hover {
+    background: $SURFACE_3;
+}
+QPushButton:pressed {
+    background: $SURFACE_2;
+}
+QPushButton:disabled {
+    color: $TEXT_DISABLED;
+    background: $SURFACE;
+}
+QPushButton[variant="primary"] {
+    background: $ACCENT;
+    color: $ON_ACCENT;
+    border: 1px solid $ACCENT;
+    font-weight: 600;
+}
+QPushButton[variant="primary"]:hover {
+    background: $ACCENT_HOVER;
+}
+QPushButton[variant="danger"] {
+    background: transparent;
+    color: $DANGER;
+    border: 1px solid $DANGER;
+}
+QPushButton[variant="danger"]:hover {
+    background: $DANGER;
+    color: $ON_ACCENT;
+    border: 1px solid $DANGER;
+}
+QPushButton[variant="success"] {
+    background: $SUCCESS;
+    color: $ON_ACCENT;
+    border: 1px solid $SUCCESS;
+    font-weight: 600;
+}
+QPushButton[variant="success"]:hover {
+    background: $SUCCESS_HOVER;
+    border: 1px solid $SUCCESS_HOVER;
+}
+
+/* ---- Inputs (components/fields.py) ---- */
+QLineEdit, QComboBox {
+    background: $SURFACE_2;
+    color: $TEXT;
+    border: 1px solid $BORDER;
+    border-radius: ${RADIUS_S}px;
+    padding: 0 ${SPACE}px;
+    min-height: ${FIELD_HEIGHT}px;
+    font-size: ${FONT_BODY}px;
+    selection-background-color: $ACCENT;
+    selection-color: $ON_ACCENT;
+}
+QLineEdit:focus, QComboBox:focus {
+    border: 1px solid $ACCENT;
+}
+QLineEdit::placeholder {
+    color: $TEXT_DISABLED;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+QComboBox QAbstractItemView {
+    background: $SURFACE_2;
+    color: $TEXT;
+    border: 1px solid $BORDER;
+    selection-background-color: $ACCENT;
+    selection-color: $ON_ACCENT;
+    outline: none;
+}
+
+/* ---- Progress bar (components/progress.py) ---- */
+QProgressBar {
+    background: $SURFACE_2;
+    border: none;
+    border-radius: 11px;
+    min-height: 22px;
+    max-height: 22px;
+    text-align: center;
+    color: $TEXT;
+    font-size: ${FONT_CAPTION}px;
+    font-weight: 500;
+}
+QProgressBar::chunk {
+    background: $SUCCESS;
+    border-radius: 11px;
+}
+
+/* ---- Sidebar navigation (components/sidebar.py) ---- */
+QFrame#sidebar {
+    background: $BG_ALT;
+    border-right: 1px solid $BORDER_2;
+}
+QFrame#sidebar QLabel#brandName {
+    font-size: ${BRAND_FONT_SIZE}px;
+    font-weight: 700;
+    color: $TEXT;
+}
+QPushButton#navItem {
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 0 ${SPACE_L}px;
+    min-height: ${NAV_HEIGHT}px;
+    font-size: ${NAV_FONT_SIZE}px;
+    color: $TEXT_MUTED;
+}
+QPushButton#navItem:hover {
+    background: $ACCENT_SOFT;
+    color: $TEXT;
+}
+QPushButton#navItem:checked {
+    background: $ACCENT_DIM;
+    color: $ACCENT;
+    font-weight: 600;
+}
+
+/* ---- Scroll areas ---- */
+QScrollArea {
+    background: transparent;
+    border: none;
+}
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 2px;
+}
+QScrollBar::handle:vertical {
+    background: $SURFACE_3;
+    border-radius: 5px;
+    min-height: 30px;
+}
+QScrollBar::handle:vertical:hover {
+    background: $BORDER;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0px;
+}
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: transparent;
+}
+
+/* ---- Native widgets the palette can't style ---- */
+QMenu {
+    background: $SURFACE_2;
+    color: $TEXT;
+    border: 1px solid $BORDER;
+}
+QMenu::item {
+    padding: 6px 24px;
+}
+QMenu::item:selected {
+    background: $ACCENT_SOFT;
+}
+QToolTip {
+    background: $SURFACE;
+    color: $TEXT;
+    border: 1px solid $BORDER;
+    padding: 4px 8px;
+}
+QStatusBar {
+    background: $BG;
+    color: $TEXT_MUTED;
+}

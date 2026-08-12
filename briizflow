@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Launch BriizFlow from the virtualenv (created by ./install.sh).
+set -e
+cd "$(dirname "$0")"
+
+if [ -x ".venv/bin/briizflow" ]; then
+    exec .venv/bin/briizflow "$@"
+fi
+
+echo "BriizFlow is not installed. Run ./install.sh first." >&2
+exit 1
