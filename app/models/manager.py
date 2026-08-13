@@ -21,7 +21,6 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 from app.config.settings import data_dir
 
 log = logging.getLogger(__name__)
-APP_VERSION = "0.1.0"
 MODEL_REPO = "ggerganov/whisper.cpp"
 CURATED_MODELS = [
     {"name": "ggml-tiny.bin", "size_mb": 75},

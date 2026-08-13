@@ -128,10 +128,13 @@ def build(root, output, cache_dir, fresh, keep):
                 "--distpath", dist,
                 "--workpath", os.path.join(workdir, "build"),
                 "--specpath", spec_dir,
-                "--add-data", "app/assets:%s" % os.path.join("app", "assets"),
-                "--add-data", "app/ui/lucide:%s" % os.path.join("app", "ui", "lucide"),
-                "--add-data", "app/ui/theme/dark.qss:%s" % os.path.join("app", "ui", "theme"),
-                "--add-data", "THIRD_PARTY_NOTICES.md:.",
+                "--add-data", "%s:%s" % (os.path.join(root, "app", "assets"),
+                                         os.path.join("app", "assets")),
+                "--add-data", "%s:%s" % (os.path.join(root, "app", "ui", "lucide"),
+                                         os.path.join("app", "ui", "lucide")),
+                "--add-data", "%s:%s" % (os.path.join(root, "app", "ui", "theme", "dark.qss"),
+                                         os.path.join("app", "ui", "theme")),
+                "--add-data", "%s:%s" % (os.path.join(root, "THIRD_PARTY_NOTICES.md"), "."),
                 "--collect-all", "PySide6",
                 "--hidden-import", "app.transcription.provider",
                 os.path.join(root, "app", "main.py"),
@@ -148,10 +151,45 @@ def build(root, output, cache_dir, fresh, keep):
         if port:
             shutil.copy2(port, os.path.join(bundle, "libportaudio.so.2"))
 
+        # The AppImage runtime execs AppRun after mounting the payload; without
+        # it the AppImage mounts but immediately fails ("execv error", exit
+        # 127) and appears to do nothing. appimagetool does not generate one.
+        apprun = os.path.join(bundle, "AppRun")
+        with open(apprun, "w", encoding="utf-8") as fh:
+            fh.write(
+                "#!/bin/sh\n"
+                "SELF=$(readlink -f \"$0\")\n"
+                "HERE=${SELF%/*}\n"
+                "export PATH=\"${HERE}/bin:${HERE}/usr/bin:${PATH}\"\n"
+                "export LD_LIBRARY_PATH=\"${HERE}:${HERE}/lib:${HERE}/usr/lib:"
+                "${HERE}/lib/x86_64-linux-gnu:${HERE}/usr/lib/x86_64-linux-gnu:"
+                "${LD_LIBRARY_PATH}\"\n"
+                "exec \"${HERE}/briizflow\" \"$@\"\n"
+            )
+        os.chmod(apprun, 0o755)
+
+        # appimagetool requires a .desktop entry and an icon in the AppDir.
+        with open(os.path.join(bundle, "briizflow.desktop"), "w", encoding="utf-8") as fh:
+            fh.write(
+                "[Desktop Entry]\n"
+                "Name=BriizFlow\n"
+                "Comment=Local voice-to-text dictation for Linux\n"
+                "Exec=briizflow\n"
+                "Icon=briizflow\n"
+                "Type=Application\n"
+                "Categories=Utility;\n"
+                "Terminal=false\n"
+            )
+        shutil.copy2(
+            os.path.join(root, "app", "assets", "icon.svg"),
+            os.path.join(bundle, "briizflow.svg"),
+        )
+
         print("==> Packaging AppImage ...")
         subprocess.run(
             [appimagetool, bundle, artifact],
             check=True,
+            env=dict(os.environ, ARCH=arch),
         )
         print("==> Wrote %s" % artifact)
         return artifact
