@@ -60,6 +60,14 @@ def test_recording_chimes_default_and_roundtrip():
     assert s.get("recording_chimes") is False
 
 
+def test_speech_cleanup_default_and_roundtrip():
+    s = Settings(path=os.path.join(tempfile.mkdtemp(), "s.json"))
+    # No cleanup by default; the transcript is used exactly as returned.
+    assert s.get("speech_cleanup") == "none"
+    s.set("speech_cleanup", "polish")
+    assert s.get("speech_cleanup") == "polish"
+
+
 def test_settings_logs_changed_keys(caplog):
     import logging
 
@@ -229,12 +237,38 @@ class _FakeProvider(QObject):
         pass
 
 
+class _FakeCleanup(QObject):
+    """A controllable stand-in for the text-cleanup runner."""
+
+    finished = Signal(str)
+    failed = Signal(str)
+
+    def __init__(self, result=None, fail=False):
+        super().__init__()
+        self.result = result
+        self.fail = fail
+        self.calls = []  # (text, mode) pairs handed to cleanup()
+        self.cancelled = False
+
+    def cleanup(self, text, mode):
+        self.calls.append((text, mode))
+        if self.fail:
+            QTimer.singleShot(0, lambda: self.failed.emit("cleanup failed"))
+        else:
+            result = self.result if self.result is not None else text
+            QTimer.singleShot(0, lambda: self.finished.emit(result))
+
+    def cancel(self):
+        self.cancelled = True
+
+
 def _make_controller(fake_audio_backend, monkeypatch, settings=None, **kwargs):
     import app.application as app_mod
 
     settings = settings or Settings(path=os.path.join(tempfile.mkdtemp(), "s.json"))
     monkeypatch.setattr(app_mod, "WhisperRunner", lambda s, parent=None: kwargs.pop("local", _FakeProvider()))
     monkeypatch.setattr(app_mod, "OpenAITranscriptionRunner", lambda s, parent=None: kwargs.pop("online", _FakeProvider()))
+    monkeypatch.setattr(app_mod, "TextCleanupRunner", lambda s, parent=None: kwargs.pop("cleanup", _FakeCleanup()))
     monkeypatch.setattr(app_mod, "play_chime", lambda kind: False)
     monkeypatch.setattr(app_mod, "system_notify", lambda *a, **k: False)
     from app.application import DictationController
@@ -412,6 +446,133 @@ def test_switching_online_stops_local_runner(fake_audio_backend, monkeypatch, tm
     controller._switch_provider()
     assert local.stopped
     assert online.started
+
+
+def _record_and_stop(controller, fake_audio_backend):
+    """Start a dictation, feed a burst of audio, then stop it."""
+    controller.toggle()
+    stream = fake_audio_backend._streams[-1][0]
+    stream._callback((np.ones(1600, dtype=np.int16) * 4000).reshape(-1, 1), 1600, None, None)
+    controller.toggle()
+
+
+# --- text cleanup ---------------------------------------------------------
+@pytest.mark.parametrize("mode", ["clean", "polish", "compact"])
+def test_cleanup_routes_through_model(qt_app, fake_audio_backend, monkeypatch, tmp_path, mode):
+    local = _FakeProvider(ready=True, result="umm so hello world")
+    cleanup = _FakeCleanup(result="hello world")
+    controller, overlay, injector, settings = _make_controller(
+        fake_audio_backend, monkeypatch, local=local, cleanup=cleanup
+    )
+    settings.set("model_name", "ggml-base.bin")
+    settings.set("recording_chimes", False)
+    settings.set("speech_cleanup", mode)
+
+    _record_and_stop(controller, fake_audio_backend)
+    QTest.qWait(10)
+
+    # The raw transcript and exactly the selected mode go to the model.
+    assert cleanup.calls == [("umm so hello world", mode)]
+    assert injector.text == "hello world"
+    assert overlay.state == "success"
+
+
+def test_cleanup_none_pastes_raw_without_llm_request(qt_app, fake_audio_backend, monkeypatch, tmp_path):
+    local = _FakeProvider(ready=True, result="hello world")
+    cleanup = _FakeCleanup()
+    controller, overlay, injector, settings = _make_controller(
+        fake_audio_backend, monkeypatch, local=local, cleanup=cleanup
+    )
+    settings.set("model_name", "ggml-base.bin")
+    settings.set("recording_chimes", False)
+    # speech_cleanup defaults to "none": no cleanup request at all.
+
+    _record_and_stop(controller, fake_audio_backend)
+    QTest.qWait(10)
+
+    assert cleanup.calls == []
+    assert injector.text == "hello world"
+
+
+def test_cleanup_failure_pastes_original(qt_app, fake_audio_backend, monkeypatch, tmp_path):
+    local = _FakeProvider(ready=True, result="umm hello world")
+    cleanup = _FakeCleanup(fail=True)
+    controller, overlay, injector, settings = _make_controller(
+        fake_audio_backend, monkeypatch, local=local, cleanup=cleanup
+    )
+    settings.set("model_name", "ggml-base.bin")
+    settings.set("recording_chimes", False)
+    settings.set("speech_cleanup", "polish")
+
+    _record_and_stop(controller, fake_audio_backend)
+    QTest.qWait(10)
+
+    # The request was attempted, but on failure the raw transcript is pasted.
+    assert cleanup.calls == [("umm hello world", "polish")]
+    assert injector.text == "umm hello world"
+    assert overlay.state == "success"
+
+
+def test_cleanup_empty_transcript_makes_no_request(qt_app, fake_audio_backend, monkeypatch, tmp_path):
+    local = _FakeProvider(ready=True, result="   ")
+    cleanup = _FakeCleanup()
+    controller, overlay, injector, settings = _make_controller(
+        fake_audio_backend, monkeypatch, local=local, cleanup=cleanup
+    )
+    settings.set("model_name", "ggml-base.bin")
+    settings.set("recording_chimes", False)
+    settings.set("speech_cleanup", "clean")
+
+    _record_and_stop(controller, fake_audio_backend)
+    QTest.qWait(10)
+
+    assert cleanup.calls == []
+    assert injector.text is None
+
+
+def test_cleanup_works_for_online_backend(qt_app, fake_audio_backend, monkeypatch, tmp_path):
+    online = _FakeProvider(ready=True, result="online raw")
+    cleanup = _FakeCleanup(result="online cleaned")
+    controller, overlay, injector, settings = _make_controller(
+        fake_audio_backend, monkeypatch, online=online, cleanup=cleanup
+    )
+    settings.set("online_transcription_enabled", True)
+    settings.set("model_name", "ggml-base.bin")
+    settings.set("recording_chimes", False)
+    settings.set("speech_cleanup", "compact")
+    controller.start_whisper()
+
+    _record_and_stop(controller, fake_audio_backend)
+    QTest.qWait(10)
+
+    assert cleanup.calls == [("online raw", "compact")]
+    assert injector.text == "online cleaned"
+
+
+def test_cleanup_persists_across_backend_switch(qt_app, fake_audio_backend, monkeypatch, tmp_path):
+    local = _FakeProvider(ready=True, result="local raw")
+    online = _FakeProvider(ready=True, result="online raw")
+    cleanup = _FakeCleanup(result="cleaned!")
+    controller, overlay, injector, settings = _make_controller(
+        fake_audio_backend, monkeypatch, local=local, online=online, cleanup=cleanup
+    )
+    settings.set("model_name", "ggml-base.bin")
+    settings.set("recording_chimes", False)
+    settings.set("speech_cleanup", "clean")
+    controller.start_whisper()
+
+    _record_and_stop(controller, fake_audio_backend)
+    QTest.qWait(10)
+    assert cleanup.calls == [("local raw", "clean")]
+    assert injector.text == "cleaned!"
+
+    # Switching backends does not change the cleanup behavior.
+    settings.set("online_transcription_enabled", True)
+    controller._switch_provider()
+    _record_and_stop(controller, fake_audio_backend)
+    QTest.qWait(10)
+    assert cleanup.calls == [("local raw", "clean"), ("online raw", "clean")]
+    assert injector.text == "cleaned!"
 
 
 # --------------------------------------------------------------------------

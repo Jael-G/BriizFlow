@@ -34,6 +34,34 @@ LANGUAGES = [
 ]
 PASTE_BACKENDS = ["auto", "x11", "wayland"]
 
+# Speech Cleanup: persisted value -> (display label, short description). The
+# label is what the dropdown shows; the description explains the selected
+# level on the row. "none" keeps the transcript exactly as the engine
+# returned it; "clean" is the mildest post-processing and the default once
+# any cleanup is selected. Keep these one-liners — they render under the
+# Cleanup level row, not the full feature spec.
+SPEECH_CLEANUP_OPTIONS = [
+    ("none", "None", "No post-processing."),
+    ("clean", "Clean", "Removes filler words, stutters, and false starts."),
+    ("polish", "Polish", "Cleans the text and makes it read naturally."),
+    ("compact", "Compact", "Makes the transcript substantially more concise."),
+]
+
+CLEANUP_ROW_DESCRIPTION = "Clean up the transcript with a small GPT model before it's pasted (requires API key)."
+
+
+def cleanup_level_description(value):
+    """The row's description text for a cleanup level: the feature blurb plus
+    the selected mode's short explanation, with the mode name emboldened."""
+    for level, label, description in SPEECH_CLEANUP_OPTIONS:
+        if level == value:
+            return "%s<br/><b>%s</b>: %s" % (
+                CLEANUP_ROW_DESCRIPTION,
+                label,
+                description,
+            )
+    return CLEANUP_ROW_DESCRIPTION
+
 
 class SettingsPage(PageScroll):
     """Grouped settings with instant apply; emits ``settings_saved(key)``."""
@@ -153,12 +181,12 @@ class SettingsPage(PageScroll):
         row.add_widget(self._recordings_browse_btn)
 
     def _build_online(self):
-        group = self._add_group("Online transcription")
+        group = self._add_group("OpenAI features")
 
         row = self._add_row(
             group,
-            "Enable online transcription",
-            "Send recordings to OpenAI. Requires an API key. Off by default.",
+            "Online transcription",
+            "Transcribe audio with OpenAI's online models (requires API key).",
             "cloud",
         )
         self._online_toggle = ToggleSwitch()
@@ -166,7 +194,7 @@ class SettingsPage(PageScroll):
         self._online_toggle.checkedChanged.connect(self._on_online_toggled)
         row.add_widget(self._online_toggle)
 
-        row = self._add_row(group, "Model", "The OpenAI transcription model to use.", "zap")
+        row = self._add_row(group, "Transcription model", "The OpenAI transcription model to use.", "zap")
         self._model_combo = ComboBox()
         for label in model_labels():
             self._model_combo.addItem(label, label)
@@ -177,6 +205,25 @@ class SettingsPage(PageScroll):
         self._model_combo.setCurrentIndex(idx if idx >= 0 else 0)
         self._model_combo.currentIndexChanged.connect(self._on_model_changed)
         row.add_widget(self._model_combo)
+
+        # The row shows the feature blurb plus whichever level is selected;
+        # the description updates as the user changes the dropdown.
+        row = self._add_row(
+            group,
+            "Cleanup level",
+            icon="brush-cleaning",
+        )
+        self._cleanup_combo = ComboBox()
+        for value, label, _description in SPEECH_CLEANUP_OPTIONS:
+            self._cleanup_combo.addItem(label, value)
+        current = (self._settings.get("speech_cleanup") or "none").lower()
+        idx = self._cleanup_combo.findData(current)
+        self._cleanup_combo.setCurrentIndex(idx if idx >= 0 else 0)
+        self._cleanup_combo.currentIndexChanged.connect(self._on_cleanup_changed)
+        row.add_widget(self._cleanup_combo)
+
+        self._cleanup_row = row
+        self._update_cleanup_description(self._cleanup_combo.currentData() or "none")
 
         row = self._add_row(group, "API key", "Stored in your system keyring, never in settings.", "key")
         self._key_field = PasswordField("", "••••••••")
@@ -234,6 +281,15 @@ class SettingsPage(PageScroll):
         model_id = model_id_for_label(label)
         if model_id:
             self._persist("openai_model", model_id)
+
+    def _on_cleanup_changed(self, _index):
+        value = self._cleanup_combo.currentData() or "none"
+        self._persist("speech_cleanup", value)
+        self._update_cleanup_description(value)
+
+    def _update_cleanup_description(self, value):
+        """Show which cleanup level is selected, under the row's feature blurb."""
+        self._cleanup_row.set_description(cleanup_level_description(value))
 
     def _on_startup_toggled(self, value):
         self._persist("start_on_login", value)

@@ -34,15 +34,32 @@ class SettingRow(QFrame):
         text_col = QVBoxLayout()
         text_col.setSpacing(2)
         text_col.addWidget(BodyStrong(title))
-        if description:
-            desc = Caption(description)
-            desc.setWordWrap(True)
-            text_col.addWidget(desc)
         layout.addLayout(text_col, 1)
+
+        self._text_col = text_col
+        self._description = None
+        if description:
+            self.set_description(description)
 
         self.controls = QHBoxLayout()
         self.controls.setSpacing(8)
         layout.addLayout(self.controls)
+
+    def set_description(self, text):
+        """Set or replace the row's description text.
+
+        Rows whose description depends on the current control value (e.g. a
+        combo that explains the selected option) update this instead of
+        rebuilding the row. The label is rich text so a value name can be
+        emboldened; plain strings render unchanged.
+        """
+        if self._description is None:
+            self._description = Caption(text)
+            self._description.setWordWrap(True)
+            self._description.setTextFormat(Qt.RichText)
+            self._text_col.addWidget(self._description)
+        else:
+            self._description.setText(text)
 
     def add_widget(self, widget):
         self.controls.addWidget(widget)

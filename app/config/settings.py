@@ -67,6 +67,7 @@ DEFAULTS = {
     "recording_chimes": True,
     "online_transcription_enabled": False,
     "openai_model": "gpt-transcribe",
+    "speech_cleanup": "none",
 }
 
 

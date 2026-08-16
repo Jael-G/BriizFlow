@@ -14,6 +14,8 @@ BriizFlow is speech-to-text for Linux that lives quietly in your system tray. Hi
 
 Run it fully offline with `whisper.cpp` and your voice never leaves your machine. Or flip on OpenAI's transcription API and trade privacy for a hosted model. Your call — BriizFlow never switches backends behind your back.
 
+**Text Cleanup** is the polish step you didn't know you needed. Raw dictation is full of "umms", false starts, and rambling — BriizFlow can strip that out, fix the grammar, or tighten your words into crisp sentences *before* the text ever reaches your app. Just pick a level in Settings and keep talking.
+
 <br>
 
 ## See it in action
@@ -30,6 +32,7 @@ Most dictation tools make you choose between *fast* and *private*. BriizFlow doe
 - **Offline and private by default** — local transcription via `whisper.cpp`. Nothing leaves your machine unless you explicitly turn on OpenAI mode.
 - **One hotkey, zero friction** — press to record, press to stop. BriizFlow handles the rest: transcription, clipboard, paste.
 - **Easily swappable models** — from a 75 MB `tiny` for speed to a 3 GB `large-v3` for accuracy. Download and swap from inside the app.
+- **Text Cleanup for polished output** — no more "um, so, like" in your emails. Clean, Polish, or Compact your dictation before it's pasted.
 - **Tray-first, out of your way** — no dock icon. It sits in the tray until you need it.
 - **Built for real Linux desktops** — X11 and Wayland, with sane fallbacks when a compositor doesn't support global shortcuts.
 
@@ -45,6 +48,23 @@ Most dictation tools make you choose between *fast* and *private*. BriizFlow doe
 | **API key required?** | No | Yes |
 
 Online mode is off by default — flip it on in Settings. Recordings over 25 MB are rejected before upload, and requests time out after 60 seconds.
+
+<br>
+
+## Text Cleanup
+
+Talking is full of "umms", false starts, and rambling — nobody wants that in an email. **Text Cleanup** is a post-transcription pass that tidies your dictation *before* BriizFlow pastes it. It works with **both** the local Whisper and OpenAI backends, because it operates on the text, not the audio.
+
+Enable it in **Settings → OpenAI features → Cleanup level** and pick a level:
+
+| Level | What it does |
+|---|---|
+| **None** *(default)* | The transcript is used exactly as it was transcribed. No post-processing. |
+| **Clean** | Removes filler words, stutters, and false starts. Keeps your wording and structure. |
+| **Polish** | Everything in Clean, plus fixes grammar, punctuation, and awkward phrasing so it reads naturally. |
+| **Compact** | Everything in Clean, plus makes the text substantially more concise. Removes redundancy while keeping the important points. |
+
+Cleanup sends the raw transcript to a small GPT model as a single, stateless request — no conversation history, no extra context — using the same OpenAI API key as online transcription. It's **non-destructive**: if a cleanup request ever fails, BriizFlow pastes your original transcript, so you never lose your words.
 
 <br>
 
@@ -107,6 +127,8 @@ Prefer a hosted model? Enable online transcription in Settings and pick one (req
 - `gpt-4o-mini-transcribe`
 - `whisper-1`
 
+[Text Cleanup](#text-cleanup) uses the same OpenAI key for its tidy-up pass — no separate account or setup needed.
+
 <br>
 
 ## Requirements
@@ -154,7 +176,7 @@ Everything lives in standard XDG locations:
 | Downloaded models | `~/.local/share/briizflow/models` |
 | Saved recordings (if enabled) | `~/BriizFlowRecordings` |
 
-Defaults: `Ctrl+Shift+Space` to dictate, `Ctrl+V` to paste, local transcription, recording chimes on, saved recordings off, clipboard restoration off. Change any of it in `./briizflow --settings`.
+Defaults: `Ctrl+Shift+Space` to dictate, `Ctrl+V` to paste, local transcription, text cleanup off, recording chimes on, saved recordings off, clipboard restoration off. Change any of it in `./briizflow --settings`.
 
 <br>
 

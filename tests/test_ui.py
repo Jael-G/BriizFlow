@@ -264,6 +264,69 @@ def test_model_dropdown_defaults_to_first_entry(qt_app, settings, _isolated_key_
     assert page._model_combo.currentData() == "GPT Transcribe"
 
 
+def _settings_page_titles(page):
+    """The settings row titles, i.e. every ``bodyStrong`` label on the page."""
+    from PySide6.QtWidgets import QLabel
+
+    return [label.text() for label in page.findChildren(QLabel, "bodyStrong")]
+
+
+def test_online_section_renamed_labels(qt_app, settings):
+    """The online group is 'OpenAI features' and holds the re-titled rows."""
+    from PySide6.QtWidgets import QLabel
+
+    from app.ui.pages.settings_page import SettingsPage
+
+    page = SettingsPage(settings)
+    titles = _settings_page_titles(page)
+    assert "Online transcription" in titles
+    assert "Transcription model" in titles
+    assert "Cleanup level" in titles
+    assert "Enable online transcription" not in titles
+    assert "Model" not in titles
+
+    headers = [label.text() for label in page.findChildren(QLabel, "groupHeader")]
+    assert "OpenAI features" in headers
+    assert "Speech Cleanup" not in headers  # folded into the online group
+
+
+def test_speech_cleanup_defaults_to_none(qt_app, settings):
+    from app.ui.pages.settings_page import SettingsPage, cleanup_level_description
+
+    page = SettingsPage(settings)
+    assert settings.get("speech_cleanup") == "none"
+    assert page._cleanup_combo.currentData() == "none"
+    # The row explains the feature and the selected level, None by default.
+    assert page._cleanup_row._description.text() == cleanup_level_description("none")
+
+
+def test_speech_cleanup_combo_is_curated(qt_app, settings):
+    from app.ui.pages.settings_page import SettingsPage, SPEECH_CLEANUP_OPTIONS
+
+    page = SettingsPage(settings)
+    labels = [page._cleanup_combo.itemText(i) for i in range(page._cleanup_combo.count())]
+    values = [page._cleanup_combo.itemData(i) for i in range(page._cleanup_combo.count())]
+    assert labels == [entry[1] for entry in SPEECH_CLEANUP_OPTIONS]
+    assert values == [entry[0] for entry in SPEECH_CLEANUP_OPTIONS]
+
+
+def test_speech_cleanup_restores_saved_level(qt_app, settings):
+    from app.ui.pages.settings_page import SettingsPage
+
+    settings.set("speech_cleanup", "compact")
+    page = SettingsPage(settings)
+    assert page._cleanup_combo.currentData() == "compact"
+
+
+def test_speech_cleanup_change_persists_and_updates_description(qt_app, settings):
+    from app.ui.pages.settings_page import SettingsPage, cleanup_level_description
+
+    page = SettingsPage(settings)
+    page._cleanup_combo.setCurrentIndex(2)  # Polish
+    assert settings.get("speech_cleanup") == "polish"
+    assert page._cleanup_row._description.text() == cleanup_level_description("polish")
+
+
 def test_dependent_controls_stay_enabled(qt_app, settings, _isolated_key_store):
     """Toggling a parent option never disables the related controls (the
     disable/dim feature was removed by design)."""

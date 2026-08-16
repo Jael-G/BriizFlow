@@ -138,7 +138,7 @@ def _body_snippet(data, limit=500):
     return data[:limit].decode("utf-8", errors="replace")
 
 
-def _error_message(response_bytes):
+def error_message(response_bytes):
     """Extract a safe provider error message from ``{"error": {"message":…}}``."""
     try:
         payload = json.loads(response_bytes.decode("utf-8", errors="replace"))
@@ -164,7 +164,7 @@ def classify_failure(reply_error, http_status, response_bytes=b""):
         if http_status == 429:
             return "OpenAI rate limit or quota reached. Try again later."
         if http_status == 400:
-            detail = redact(_error_message(response_bytes))
+            detail = redact(error_message(response_bytes))
             if detail:
                 return "OpenAI rejected the recording: %s" % detail
         if http_status >= 500:

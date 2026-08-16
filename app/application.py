@@ -10,8 +10,11 @@ States: ``idle`` -> ``recording`` -> ``transcribing`` -> ``idle``
   localhost HTTP; the overlay shows a spinner meanwhile. When online
   transcription is enabled, :class:`app.transcription.openai_runner.OpenAITranscriptionRunner`
   is used instead.
-* The finished transcript is injected at the cursor by the configured
-  injector (X11 or Wayland).
+* When ``speech_cleanup`` is non-``none``, the finished transcript is first
+  sent through the text-cleanup pass (``app.transcription.cleanup``); on any
+  cleanup failure the original transcript is pasted unchanged.
+* The transcript is injected at the cursor by the configured injector (X11 or
+  Wayland).
 
 Dictation is gated on the server being ready: a toggle before readiness shows
 a concise starting state instead of recording audio that could not be
@@ -33,6 +36,7 @@ from app.config.settings import cache_dir, default_recordings_dir
 from app.input.text_injector import create_injector
 from app.notifications import system_notify
 from app.shortcuts.hotkey_manager import HotkeyManager
+from app.transcription.cleanup import TextCleanupRunner
 from app.transcription.openai_runner import OpenAITranscriptionRunner
 from app.ui.components.window import AppWindow
 from app.whisper.runner import WhisperRunner
@@ -52,8 +56,11 @@ class DictationController(QObject):
         self._recorder = AudioRecorder(settings, self)
         self._local = WhisperRunner(settings, self)
         self._online = OpenAITranscriptionRunner(settings, self)
+        self._cleanup = TextCleanupRunner(settings, self)
         self._provider = self._local
         self._state = "idle"
+        # Raw transcript awaiting the optional cleanup pass, if one is running.
+        self._pending_text = None
         self._hotkeys = None
         self._tray = None
         self._window = None
@@ -64,6 +71,8 @@ class DictationController(QObject):
 
         self._connect_provider(self._local)
         self._connect_provider(self._online)
+        self._cleanup.finished.connect(self._on_cleanup_finished)
+        self._cleanup.failed.connect(self._on_cleanup_failed)
         self._injector.injected.connect(self._on_injected)
         self._injector.failed.connect(self._on_inject_failed)
 
@@ -124,6 +133,7 @@ class DictationController(QObject):
         """Cancel in-flight work, stop the server, then quit."""
         log.info("Quitting: cancelling in-flight work and stopping the server")
         self._online.cancel()
+        self._cleanup.cancel()
         self._recorder.cleanup()
         self._local.stop()
         if self._hotkeys is not None:
@@ -212,8 +222,33 @@ class DictationController(QObject):
             log.info("Transcript was empty; silent no-op")
             self._return_to_idle(hide_overlay=True)
             return
-        log.info("Transcript received: %r", text)
+        mode = (self._settings.get("speech_cleanup") or "none").lower()
+        if mode == "none":
+            log.info("Transcript received: %r", text)
+            self._injector.inject(text)
+            return
+        # Cleanup enabled: the overlay stays in its processing state while the
+        # text model cleans the transcript; the result is pasted on completion
+        # (and the raw transcript is pasted if cleanup fails).
+        log.info("Transcript received (cleanup=%s): %r", mode, text)
+        self._pending_text = text
+        self._cleanup.cleanup(text, mode)
+
+    def _on_cleanup_finished(self, text):
+        text = (text or "").strip()
+        if not text:
+            # A blank cleanup result is treated like a failure: paste the raw.
+            text = self._pending_text or ""
+        self._pending_text = None
+        log.info("Cleaned transcript: %r", text)
         self._injector.inject(text)
+        # Result is reported by _on_injected / _on_inject_failed.
+
+    def _on_cleanup_failed(self, message):
+        log.warning("Text cleanup failed; pasting the original transcript: %s", message)
+        raw = self._pending_text or ""
+        self._pending_text = None
+        self._injector.inject(raw)
         # Result is reported by _on_injected / _on_inject_failed.
 
     def _on_failed(self, message):
